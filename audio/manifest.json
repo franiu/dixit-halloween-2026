@@ -1,0 +1,70 @@
+{
+ "bethel": {
+  "file": "audio/bethel.mp3",
+  "duration": 93.2
+ },
+ "carpenters": {
+  "file": "audio/carpenters.mp3",
+  "duration": 55.6
+ },
+ "headhouse": {
+  "file": "audio/headhouse.mp3",
+  "duration": 46.8
+ },
+ "hospital": {
+  "file": "audio/hospital.mp3",
+  "duration": 55.9
+ },
+ "jail": {
+  "file": "audio/jail.mp3",
+  "duration": 69.3
+ },
+ "kosciuszko": {
+  "file": "audio/kosciuszko.mp3",
+  "duration": 70.9
+ },
+ "library": {
+  "file": "audio/library.mp3",
+  "duration": 54.8
+ },
+ "mikveh": {
+  "file": "audio/mikveh.mp3",
+  "duration": 49.4
+ },
+ "oldpine": {
+  "file": "audio/oldpine.mp3",
+  "duration": 49.6
+ },
+ "physick": {
+  "file": "audio/physick.mp3",
+  "duration": 57.9
+ },
+ "powel": {
+  "file": "audio/powel.mp3",
+  "duration": 64.4
+ },
+ "stmarys": {
+  "file": "audio/stmarys.mp3",
+  "duration": 52.6
+ },
+ "stpeters": {
+  "file": "audio/stpeters.mp3",
+  "duration": 64.7
+ },
+ "theatre": {
+  "file": "audio/theatre.mp3",
+  "duration": 65.6
+ },
+ "todd": {
+  "file": "audio/todd.mp3",
+  "duration": 64.4
+ },
+ "wash": {
+  "file": "audio/wash.mp3",
+  "duration": 96.6
+ },
+ "white": {
+  "file": "audio/white.mp3",
+  "duration": 49.6
+ }
+}

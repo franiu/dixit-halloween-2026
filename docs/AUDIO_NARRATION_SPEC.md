@@ -1,6 +1,6 @@
 # Spec: Audio narration per stop (MP3)
 
-**Status:** ready to implement · **Deadline:** before the walk (start 15:30 ET, 31.10.2026), so keep the scope tight.
+**Status:** ✅ implemented 31.10 (ElevenLabs v3, voice Henry; see CLAUDE.md) · **Deadline:** before the walk (start 15:30 ET, 31.10.2026), so keep the scope tight.
 **Why a laptop session:** the cloud sandbox can't reach TTS providers. The laptop can.
 
 ## Goal

@@ -1,7 +1,7 @@
 /* Upiorne dźwięki — syntezowane w WebAudio, bez plików. */
 (function () {
   let ctx = null, master = null, ambientNodes = null;
-  let enabled = true;
+  let enabled = true, ducked = false;
 
   function init() {
     if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
@@ -221,8 +221,14 @@
     stopAmbient,
     setEnabled(v) {
       enabled = v;
-      if (master) master.gain.setTargetAtTime(v ? 0.9 : 0, ctx.currentTime, 0.1);
+      if (master) master.gain.setTargetAtTime(v ? (ducked ? 0.2 : 0.9) : 0, ctx.currentTime, 0.1);
       if (v) startAmbient();
+    },
+    // ściszenie nastroju pod narrację lektora
+    duck(on) {
+      if (ducked === !!on) return;
+      ducked = !!on;
+      if (master && enabled) master.gain.setTargetAtTime(ducked ? 0.2 : 0.9, ctx.currentTime, 0.15);
     },
     get enabled() { return enabled; }
   };

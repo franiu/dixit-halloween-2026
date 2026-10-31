@@ -17,7 +17,11 @@ It is hosted on **GitHub Pages** from `main` / root at https://franiu.github.io/
 | `js/audio.js` | `window.SpookyAudio`: WebAudio-synthesized SFX and ambient sound (no audio files). `play(name)`, `startAmbient()`, `stopAmbient()`, `setEnabled(bool)` |
 | `css/style.css` | All styles. Color tokens are on `:root` |
 | `vendor/leaflet`, `vendor/maplibre` | Leaflet 1.9.4, MapLibre GL 4.7.1, @maplibre/maplibre-gl-leaflet 0.1.4 (vendored from npm) |
-| `docs/AUDIO_NARRATION_SPEC.md` | Spec for the next feature: MP3 narration per stop |
+| `docs/AUDIO_NARRATION_SPEC.md` | Spec for the MP3 narration (implemented) |
+| `narration/scripts/<id>.txt` | Narration texts, built from `data.js` by `node tools/build_scripts.mjs` (normalizes abbreviations and dates for TTS) |
+| `audio/<id>.mp3`, `audio/manifest.json` | Narration per stop: ElevenLabs **eleven_v3**, voice **Henry – Investigative and Documentary** (`7wG1Xb86NcD408WGmfbJ`, pl-PL), `mp3_44100_64`. The manifest (`{id: {file, duration}}`) is read by the app |
+| `tools/generate_audio.py` | `ELEVENLABS_API_KEY=… python3 tools/generate_audio.py [--only id1,id2] [--force]`. Skips stops whose text and settings are unchanged (`audio/.hashes.json`). **Never commit the key** |
+| `tools/build_manifest.py` | Rebuilds `audio/manifest.json` (durations via `afinfo` or `ffprobe`) |
 
 ## Key behaviors
 - **Map:** vector tiles from OpenFreeMap (keyless; the `dark` style is recolored by `spookify()`), falling back to the `positron` style, then to raster OSM, then to CARTO. `?tiles=raster` forces raster.
@@ -26,6 +30,8 @@ It is hosted on **GitHub Pages** from `main` / root at https://franiu.github.io/
 - **Far from the route:** when more than 3 km from Washington Square, times are computed from the garage.
 - **State** is kept in `localStorage` under key `upiorny-spacer-2026`.
 - **Ambient audio** is stopped during the show phase and when the page is hidden.
+- **Narration:** the 🎧 button in each story sheet plays the stop's MP3 through a single shared `Audio` element. Ambient sound ducks via `SpookyAudio.duck()`, a "now playing" pill (`#nowPlaying`) appears above the card, and the lock screen uses the Media Session API. Narration stops in the show phase, and scares and the crawling hand are suppressed while it plays. Listening past 80% gives +2 souls (`st.eggs.listen_<id>`).
+- **After editing story text in `data.js`:** run `node tools/build_scripts.mjs`, then `generate_audio.py` (regenerates only the changed stops), then `build_manifest.py`.
 
 ## Testing
 - Serve locally with `python3 -m http.server 8765`, then open `http://localhost:8765/`.

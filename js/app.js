@@ -457,7 +457,7 @@
     }
     if (t) storyBtn.textContent = '📜 Opowieść';
     // ambient wyciszony w teatrze
-    if (P.ph === 'show' && st.visited.theatre) A.stopAmbient();
+    if (P.ph === 'show' && st.visited.theatre) { A.stopAmbient(); narrStop(); }
     // badge
     $('#soulBadge').textContent = st.souls;
     // markery przy zmianie celu
@@ -495,6 +495,70 @@
   function closeSheet() { $('#sheetWrap').classList.add('hidden'); render(); }
   document.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', closeSheet));
 
+  // ---------------- Narracja (MP3: Henry / ElevenLabs) ----------------
+  let NARR = {};
+  fetch('audio/manifest.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : {})).then((m) => { NARR = m || {}; }).catch(() => {});
+  const N = { el: null, id: null };
+  const fmtT = (x) => { x = Math.max(0, Math.floor(x || 0)); return Math.floor(x / 60) + ':' + String(x % 60).padStart(2, '0'); };
+  const narrPlaying = () => !!(N.el && !N.el.paused && !N.el.ended);
+  function narrEl() {
+    if (N.el) return N.el;
+    const a = new Audio(); a.preload = 'none';
+    ['play', 'pause', 'ended', 'loadedmetadata'].forEach((ev) => a.addEventListener(ev, narrSync));
+    a.addEventListener('timeupdate', () => {
+      narrSync();
+      if (N.id && a.duration && a.currentTime / a.duration > 0.8 && !st.eggs['listen_' + N.id]) {
+        st.eggs['listen_' + N.id] = 1; addSouls(2); save();
+      }
+    });
+    a.addEventListener('error', () => { if (N.id) toast('🎧 Nie udało się wczytać nagrania — brak zasięgu?'); narrSync(); });
+    N.el = a; return a;
+  }
+  function narrPlay(id) {
+    const a = narrEl(); A.init();
+    if (N.id !== id) { N.id = id; a.src = NARR[id].file; }
+    else if (a.ended) a.currentTime = 0;
+    a.play().catch(() => {});
+    const s = stopById[id];
+    if ('mediaSession' in navigator && window.MediaMetadata) {
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({ title: `${s.name}`, artist: 'Upiorny Spacer · czyta Henry', album: 'Filadelfia · Halloween 2026' });
+        navigator.mediaSession.setActionHandler('play', () => a.play());
+        navigator.mediaSession.setActionHandler('pause', () => a.pause());
+        navigator.mediaSession.setActionHandler('seekbackward', () => { a.currentTime = Math.max(0, a.currentTime - 15); });
+        navigator.mediaSession.setActionHandler('seekforward', () => { a.currentTime = Math.min(a.duration || 0, a.currentTime + 15); });
+      } catch (e) {}
+    }
+  }
+  function narrToggle(id) { const a = narrEl(); if (N.id === id && !a.paused) a.pause(); else narrPlay(id); }
+  function narrStop() { if (N.el && !N.el.paused) N.el.pause(); }
+  function narrSync() {
+    const a = N.el, playing = narrPlaying();
+    A.duck(playing);
+    const box = document.querySelector('#narr');
+    if (box && NARR[box.dataset.id]) {
+      const mine = a && N.id === box.dataset.id;
+      const d = (mine && a.duration) || NARR[box.dataset.id].duration;
+      box.querySelector('.narr-btn').textContent = mine && playing ? '⏸ Pauza' : (mine && a.currentTime > 1 && !a.ended ? '▶ Wznów' : '🎧 Posłuchaj');
+      box.querySelector('.narr-time').textContent = mine && a.currentTime > 0 && !a.ended ? `${fmtT(a.currentTime)} / ${fmtT(d)}` : fmtT(d);
+      box.querySelector('.narr-bar i').style.width = mine && a.duration && !a.ended ? (100 * a.currentTime / a.duration) + '%' : '0%';
+      box.classList.toggle('playing', !!(mine && playing));
+    }
+    const chip = $('#nowPlaying');
+    const show = !!(a && N.id && !a.ended && (playing || a.currentTime > 1));
+    chip.classList.toggle('hidden', !show);
+    if (show) chip.textContent = (playing ? '⏸' : '▶') + ' 🎧 ' + stopById[N.id].name;
+  }
+  $('#nowPlaying').addEventListener('click', () => { if (N.id) narrToggle(N.id); });
+  function narrHtml(id) {
+    const n = NARR[id]; if (!n) return '';
+    return `<div class="narr" id="narr" data-id="${id}">
+      <button class="btn primary narr-btn">🎧 Posłuchaj</button>
+      <button class="btn icon narr-back" aria-label="Cofnij 15 sekund">↺15</button>
+      <div class="narr-meta"><div class="narr-bar"><i></i></div><span class="narr-time">${fmtT(n.duration)}</span> · czyta Henry</div>
+    </div>`;
+  }
+
   function openStory(id) {
     const s = stopById[id]; if (!s) return;
     A.play('creak');
@@ -505,6 +569,7 @@
         <h2 class="s-title">${s.name}</h2><div class="s-sub">${s.sub}</div>
         <span class="chip">⏳ ${s.era}</span> ${got ? '<span class="chip seal">✔ pieczęć zdobyta</span>' : ''}
       </div>
+      ${narrHtml(id)}
       <div class="s-text">${s.story.map((p) => `<p>${p}</p>`).join('')}</div>
       <div class="box dark"><h4>🩸 Mroczna strona</h4><p class="blur-reveal ${st.eggs['dark_' + id] ? 'revealed' : ''}" data-reveal="dark_${id}">${s.dark}</p>
         ${st.eggs['dark_' + id] ? '' : '<div class="reveal-hint">Dotknij, jeśli masz odwagę…</div>'}</div>
@@ -532,6 +597,12 @@
       root.querySelectorAll('.opt').forEach((b) => b.addEventListener('click', () => answer(s, Number(b.dataset.i), root)));
       const cb = root.querySelector('#claimBtn');
       if (cb) cb.addEventListener('click', () => { arrive(id, false); openStory(id); });
+      const nb = root.querySelector('#narr');
+      if (nb) {
+        nb.querySelector('.narr-btn').addEventListener('click', () => narrToggle(id));
+        nb.querySelector('.narr-back').addEventListener('click', () => { if (N.el && N.id === id) N.el.currentTime = Math.max(0, N.el.currentTime - 15); });
+        narrSync();
+      }
     });
   }
   function doRitual(s, btn) {
@@ -695,7 +766,7 @@
     <ellipse cx="72" cy="86" rx="16" ry="24" fill="#05020a"/><ellipse cx="128" cy="86" rx="16" ry="24" fill="#05020a"/>
     <ellipse cx="100" cy="140" rx="20" ry="28" fill="#05020a"/><circle cx="74" cy="80" r="4" fill="#e0243f"/><circle cx="130" cy="80" r="4" fill="#e0243f"/></svg>`;
   function jumpScare() {
-    if (!st.scaresOn || document.hidden) return;
+    if (!st.scaresOn || document.hidden || narrPlaying()) return;
     st.scares++; save();
     const el = $('#scare'); el.innerHTML = GHOST_SVG; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
     A.play('scream'); vibrate([300, 50, 300]);
@@ -715,7 +786,7 @@
   }
   // Rączka
   function thingWalk() {
-    if (!$('#sheetWrap').classList.contains('hidden') || (phase() === 'show' && st.visited.theatre)) return;
+    if (!$('#sheetWrap').classList.contains('hidden') || narrPlaying() || (phase() === 'show' && st.visited.theatre)) return;
     const t = $('#thing'); t.classList.remove('walk'); void t.offsetWidth; t.classList.add('walk');
     setTimeout(() => t.classList.remove('walk'), 9200);
   }
@@ -837,5 +908,5 @@
   render();
   window.addEventListener('resize', render);
   // debug
-  window.__spooky = { st: () => st, planInfo, target, arrive, jumpScare, thingWalk, setMe: (lat, lng) => { me = { lat, lng, acc: 5 }; drawMe(); checkArrivals(); render(); } };
+  window.__spooky = { narr: () => ({ id: N.id, playing: narrPlaying(), manifest: NARR }), st: () => st, planInfo, target, arrive, jumpScare, thingWalk, setMe: (lat, lng) => { me = { lat, lng, acc: 5 }; drawMe(); checkArrivals(); render(); } };
 })();
