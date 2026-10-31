@@ -145,10 +145,29 @@
 
   // ---------------- Mapa ----------------
   const map = L.map('map', { zoomControl: false, attributionControl: true }).setView([39.9455, -75.1495], 16);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20, subdomains: 'abcd',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-  }).addTo(map);
+  // Kafelki bez klucza API: OpenStreetMap (przyciemnione CSS-em), awaryjnie CARTO.
+  const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+  const TILES = {
+    osm: () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, className: 'tiles-osm', attribution: OSM_ATTR
+    }),
+    carto: () => L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 20, subdomains: 'abcd', attribution: OSM_ATTR + ' &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    })
+  };
+  const tileOrder = qs.get('tiles') === 'carto' ? ['carto', 'osm'] : ['osm', 'carto'];
+  let tileIdx = 0, tileErrors = 0, tileLoads = 0, tileLayer = null;
+  function useTiles(i) {
+    if (tileLayer) map.removeLayer(tileLayer);
+    tileIdx = i; tileErrors = 0; tileLoads = 0;
+    tileLayer = TILES[tileOrder[i]]().addTo(map);
+    tileLayer.on('tileload', () => { tileLoads++; });
+    tileLayer.on('tileerror', () => {
+      tileErrors++;
+      if (tileErrors >= 4 && tileLoads === 0 && tileIdx + 1 < tileOrder.length) useTiles(tileIdx + 1);
+    });
+  }
+  useTiles(0);
 
   const markers = {};
   function mkIcon(s, cls) {
