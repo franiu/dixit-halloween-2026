@@ -8,9 +8,9 @@ window.SPOOKY = {
   // Godziny (czas Filadelfii, HH:MM)
   schedule: {
     start: '15:30',       // wyjście z parkingu
-    meet: '15:45',        // spotkanie na Washington Square
+    meet: '15:40',        // spotkanie na Washington Square
     dinner: '16:30',      // rezerwacja
-    leaveDinner: '18:20', // wyjście z kolacji (nocna trasa do teatru, ~10 min zapasu przed 19:00)
+    leaveDinner: '18:25', // wyjście z kolacji (nocna trasa do teatru, ~10 min zapasu przed 19:00)
     show: '19:00',        // The Addams Family
     showEnd: '21:30',     // mniej więcej koniec spektaklu
     sunset: '18:02'
@@ -21,14 +21,15 @@ window.SPOOKY = {
   //   ?dinner=39.948,-75.144&dinnerName=Nazwa%20restauracji&garage=39.95,-75.15&garageName=Parking
   places: {
     garage: {
-      id: 'garage', name: 'Parking', emoji: '🚗',
-      addr: 'Adres parkingu do uzupełnienia',
-      lat: 39.94905, lng: -75.15510, placeholder: true
+      id: 'garage', name: 'Parking · 615 Chestnut St', emoji: '🚗',
+      addr: '615 Chestnut St (między 6th a 7th)',
+      lat: 39.94970, lng: -75.15200
     },
     dinner: {
-      id: 'dinner', name: 'Kolacja halloweenowa', emoji: '🍽️',
-      addr: 'Rezerwacja 16:30 · adres do uzupełnienia',
-      lat: 39.94690, lng: -75.14440, placeholder: true
+      id: 'dinner', name: 'Brauhaus Schmitz', emoji: '🍺',
+      sub: 'Kolacja 16:30 · 718 South St',
+      addr: '718 South St (między 7th a 8th) · rezerwacja 16:30',
+      lat: 39.94130, lng: -75.15400
     },
     theatre: {
       id: 'theatre', name: 'Walnut Street Theatre', emoji: '🎭',
@@ -185,7 +186,7 @@ window.SPOOKY = {
       links: [{ t: 'NPS', u: 'https://www.nps.gov/inde/planyourvisit/bishopwhitehouse.htm' }]
     },
     {
-      id: 'powel', phase: 'walk', emoji: '🕰️', dwell: 2,
+      id: 'powel', phase: 'walk', emoji: '🕰️', dwell: 2, optional: true,
       name: 'Powel House',
       sub: 'Salon, febra i rozebrany dom',
       lat: 39.94545, lng: -75.14700, radius: 50,
@@ -289,7 +290,7 @@ window.SPOOKY = {
       links: [{ t: 'Physick House', u: 'https://www.philalandmarks.org/hill-physick-house' }]
     },
     {
-      id: 'stmarys', phase: 'walk', emoji: '✝️', dwell: 1, optional: true,
+      id: 'stmarys', phase: 'bonus', emoji: '✝️', dwell: 2,
       name: 'Old St. Mary’s',
       sub: 'Ojciec marynarki pod liśćmi',
       lat: 39.94570, lng: -75.14870, radius: 50,
@@ -307,6 +308,29 @@ window.SPOOKY = {
         ok: 0, why: 'Choć fani Johna Paula Jonesa się kłócą.'
       },
       links: [{ t: 'Wikipedia', u: "https://en.wikipedia.org/wiki/Old_St._Mary%27s_Church_(Philadelphia)" }]
+    },
+    {
+      id: 'bethel', phase: 'walk', emoji: '⛪', dwell: 3,
+      name: 'Mother Bethel AME',
+      sub: 'Ci, którzy grzebali zmarłych w 1793',
+      lat: 39.94290, lng: -75.15190, radius: 55,
+      era: '1787 · 1793 · 1794',
+      story: [
+        '<b>Richard Allen</b> urodził się w niewoli, wykupił się na wolność i założył tu pierwszy kościół <b>African Methodist Episcopal</b> — dziś wspólnotę liczącą miliony wiernych na całym świecie. Ta działka uważana jest za najstarszy grunt w USA nieprzerwanie należący do czarnoskórych właścicieli.',
+        'Gdy w 1793 r. biali mieszkańcy uciekali przed febrą, Allen i <b>Absalom Jones</b> zorganizowali czarnoskórą społeczność Filadelfii: pielęgnowali chorych, wozili i grzebali zmarłych, gdy nikt inny nie chciał.'
+      ],
+      dark: 'Poprosił ich o to dr Benjamin Rush — bo <b>błędnie wierzył, że czarnoskórzy są odporni na żółtą febrę</b>. Nie byli. Umierali tak samo. A po epidemii jeden z wydawców oskarżył ich jeszcze o… żerowanie na zmarłych. Allen i Jones odpowiedzieli w 1794 r. pamfletem — jednym z pierwszych tekstów politycznych czarnoskórych autorów w USA.',
+      legend: 'Grobowiec Richarda Allena i jego żony Sarah jest w krypcie pod kościołem. Mówi się, że gdy na ulicy robi się zbyt głośno, ze środka dobiega jeden, spokojny ton organów.',
+      ritual: { label: '🔔 Zadzwoń za tych, którzy zostali', fx: 'bell', done: 'Dźwięk niesie się aż do Washington Square.' },
+      quiz: {
+        q: 'Dlaczego Rush poprosił czarnoskórych mieszkańców o pomoc przy febrze?',
+        a: ['Bo byli lekarzami', 'Bo błędnie wierzył, że są odporni', 'Bo zapłacił im fortunę', 'Bo nakazał to Waszyngton'],
+        ok: 1, why: 'Mit o „odporności” kosztował wiele istnień.'
+      },
+      links: [
+        { t: 'Mother Bethel', u: 'https://www.motherbethel.org/' },
+        { t: 'Wikipedia', u: 'https://en.wikipedia.org/wiki/Mother_Bethel_A.M.E._Church' }
+      ]
     },
     {
       id: 'headhouse', phase: 'bonus', emoji: '🧺', dwell: 2,
@@ -393,7 +417,7 @@ window.SPOOKY = {
   ],
 
   // Kolejność trasy przed kolacją i po kolacji
-  walkOrder: ['wash', 'todd', 'white', 'powel', 'kosciuszko', 'stpeters', 'oldpine', 'physick', 'stmarys'],
+  walkOrder: ['wash', 'todd', 'white', 'powel', 'kosciuszko', 'stpeters', 'physick', 'oldpine', 'bethel'],
   nightOrder: ['hospital', 'mikveh', 'theatre'],
 
   // Historie „do opowiedzenia przy stole”

@@ -95,7 +95,11 @@
     if (m < S.meet && !st.visited.wash) return 'approach';
     return 'walk';
   }
-  function remaining(order) { return order.map((id) => stopById[id]).filter((s) => !isDone(s.id)); }
+  // przystanki przed ostatnim odwiedzonym uznajemy za minięte (nie zawracamy grupy)
+  function remaining(order) {
+    let last = -1; order.forEach((id, i) => { if (st.visited[id]) last = i; });
+    return order.slice(last + 1).map((id) => stopById[id]).filter((s) => !isDone(s.id));
+  }
   function target() {
     const ph = phase();
     if (st.manual) {
@@ -502,7 +506,7 @@
     const html = `<div class="s-hero"><div class="s-emoji">🕰️</div><h2 class="s-title">Plan nocy</h2><div class="s-sub">Teraz ${hhmm(now)} · dotknij punktu, by do niego prowadzić</div></div>
       <ul class="plan">
         ${row(hhmm(S.start), '🚗', D.places.garage.name, D.places.garage.addr, 'milestone', 'garage')}
-        <h3>Spacer: Washington Square → Society Hill</h3>
+        <h3>Spacer: Washington Sq → Society Hill → South St</h3>
         ${walkRows}
         ${row(hhmm(S.dinner), '🍽️', D.places.dinner.name, D.places.dinner.addr, 'milestone ' + (st.arrivedDinner ? 'done' : t && t.id === 'dinner' ? 'current' : ''), 'dinner')}
         ${row(hhmm(S.sunset), '🌅', 'Zachód słońca', 'Od teraz duchy mają pierwszeństwo', 'milestone')}
