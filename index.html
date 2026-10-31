@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#0b0710">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Upiorny spacer po Filadelfii — Halloween 2026. Mapa, historia, duchy.">
+  <title>Upiorny Spacer · Filadelfia</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎃</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Rubik:wght@400;500;700&display=swap&subset=latin-ext" rel="stylesheet">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="map" aria-label="Mapa trasy"></div>
+  <div class="fog fog-a"></div>
+  <div class="fog fog-b"></div>
+  <div class="vignette"></div>
+  <div id="bats" aria-hidden="true"></div>
+
+  <!-- HUD -->
+  <header class="hud">
+    <button id="logo" class="hud-btn" aria-label="Dynia">🎃</button>
+    <div class="hud-main">
+      <div id="phaseLabel" class="hud-label">Do kolacji</div>
+      <div id="countdown" class="hud-count">--:--</div>
+    </div>
+    <div class="hud-right">
+      <div id="clock" class="hud-clock">--:--</div>
+      <button id="soundBtn" class="hud-btn small" aria-label="Dźwięk">🔊</button>
+    </div>
+  </header>
+  <button id="status" class="status-pill" type="button"></button>
+
+  <!-- Pływające przyciski -->
+  <nav class="fabs">
+    <button id="locBtn" class="fab" aria-label="Pokaż mnie">◎</button>
+    <button id="planBtn" class="fab" aria-label="Plan">🕰️</button>
+    <button id="bingoBtn" class="fab" aria-label="Bingo">🕸️</button>
+    <button id="bookBtn" class="fab" aria-label="Księga dusz">📖<span id="soulBadge" class="badge">0</span></button>
+  </nav>
+
+  <!-- Karta celu -->
+  <section id="card" class="card">
+    <div class="card-row">
+      <div class="compass" id="compass" title="Kierunek do celu">
+        <svg id="arrow" viewBox="0 0 100 100" width="58" height="58" aria-hidden="true">
+          <defs>
+            <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffb35c"/><stop offset="1" stop-color="#ff5e00"/>
+            </linearGradient>
+          </defs>
+          <path d="M50 8 L74 78 L50 64 L26 78 Z" fill="url(#ag)" stroke="#2a0f00" stroke-width="3" stroke-linejoin="round"/>
+        </svg>
+        <span id="compassHint" class="compass-hint">N↑</span>
+      </div>
+      <div class="card-info">
+        <div id="cKicker" class="card-kicker">Następny przystanek</div>
+        <h2 id="cName" class="card-name">…</h2>
+        <div id="cSub" class="card-sub"></div>
+      </div>
+      <div class="card-dist">
+        <b id="cDist">—</b>
+        <span id="cEta"></span>
+      </div>
+    </div>
+    <div class="card-actions" id="cActions">
+      <button id="storyBtn" class="btn primary">📜 Opowieść</button>
+      <a id="navBtn" class="btn" target="_blank" rel="noopener">🧭 Prowadź</a>
+      <button id="hereBtn" class="btn">✋ Jesteśmy!</button>
+      <button id="skipBtn" class="btn icon" aria-label="Pomiń">⏭</button>
+    </div>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Arkusz (opowieści, plan, księga, bingo) -->
+  <div id="sheetWrap" class="sheet-wrap hidden">
+    <div class="sheet-backdrop" data-close></div>
+    <article id="sheet" class="sheet">
+      <button class="sheet-close" data-close aria-label="Zamknij">✕</button>
+      <div id="sheetBody"></div>
+    </article>
+  </div>
+
+  <!-- Intro -->
+  <div id="intro" class="intro">
+    <div class="intro-moon"></div>
+    <div class="intro-inner">
+      <div class="intro-kicker">Filadelfia · 31 października 2026</div>
+      <h1 class="intro-title">Upiorny<br>Spacer</h1>
+      <p class="intro-lead">Washington Square · Society Hill · kolacja · <i>The Addams Family</i></p>
+      <p class="intro-text">Pod tymi cegłami leżą ofiary febry, pojedynkowicze i bohaterowie — także jeden <b>nasz</b>. Zbierajcie pieczęcie, odpowiadajcie duchom, wypatrujcie Rączki.<br><small>Zgoda na lokalizację, kompas i dźwięk zrobi z tego prawdziwy seans.</small></p>
+      <button id="enterBtn" class="btn primary big">Wejdź… jeśli się odważysz</button>
+      <button id="quietBtn" class="btn ghostly">Wejdź po cichu (bez dźwięku i straszaków)</button>
+      <div id="placeholderWarn" class="intro-warn hidden"></div>
+    </div>
+  </div>
+
+  <div id="scare" class="scare" aria-hidden="true"></div>
+  <button id="thing" class="thing" aria-label="Rączka">✋</button>
+  <div id="flash" class="flash"></div>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
