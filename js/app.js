@@ -113,8 +113,10 @@
     if (ph === 'show') return st.visited.theatre ? null : stopById.theatre;
     return D.places.garage;
   }
+  const FAR = 3000; // >3 km od Washington Square = „nie na trasie” (np. test z domu)
+  const isFar = () => !!me && dist(me, stopById.wash) > FAR;
   function origin() {
-    if (me) return me;
+    if (me && !isFar()) return me;
     const all = D.walkOrder.concat(D.nightOrder).filter((id) => st.visited[id]);
     if (all.length) return stopById[all[all.length - 1]];
     return phase() === 'home' ? stopById.theatre : D.places.garage;
@@ -167,7 +169,52 @@
       if (tileErrors >= 4 && tileLoads === 0 && tileIdx + 1 < tileOrder.length) useTiles(tileIdx + 1);
     });
   }
+  // Mapa wektorowa (OpenFreeMap + MapLibre, bez klucza). ?tiles=raster wymusza kafelki rastrowe.
+  const VECTOR_ATTR = '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> ' + OSM_ATTR;
+  function webglOk() {
+    try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) { return false; }
+  }
+  function spookify(style) {
+    // delikatne przemalowanie ciemnego stylu na halloweenowo
+    const set = (l, prop, val) => { l.paint = l.paint || {}; l.paint[prop] = val; };
+    style.layers.forEach((l) => {
+      const id = l.id.toLowerCase();
+      if (l.type === 'background') set(l, 'background-color', '#120b19');
+      else if (l.type === 'fill' && /water/.test(id)) set(l, 'fill-color', '#0a1424');
+      else if (l.type === 'fill' && /cemetery|grave/.test(id)) set(l, 'fill-color', '#2b1436');
+      else if (l.type === 'fill' && /park|grass|wood|forest|garden|pitch|wetland|scrub/.test(id)) set(l, 'fill-color', '#16141f');
+      else if (l.type === 'fill' && /building/.test(id)) { set(l, 'fill-color', '#1f1828'); if (l.paint['fill-outline-color']) set(l, 'fill-outline-color', '#2c2238'); }
+      else if (l.type === 'symbol' && l.paint && 'text-halo-color' in l.paint) set(l, 'text-halo-color', '#0b0710');
+    });
+    return style;
+  }
+  async function tryVector() {
+    if (qs.get('tiles') === 'raster' || qs.get('tiles') === 'carto' || !window.maplibregl || !L.maplibreGL || !webglOk()) return false;
+    for (const [name, dark] of [['dark', true], ['positron', false]]) {
+      try {
+        const r = await fetch('https://tiles.openfreemap.org/styles/' + name);
+        if (!r.ok) continue;
+        const style = await r.json();
+        if (!style || !style.layers) continue;
+        const gl = L.maplibreGL({ style: dark ? spookify(style) : style, attribution: VECTOR_ATTR, maxZoom: 20 });
+        // przełącz dopiero, gdy styl faktycznie się załaduje
+        const ok = await new Promise((res) => {
+          const t = setTimeout(() => res(false), 8000);
+          gl.addTo(map);
+          const m = gl.getMaplibreMap();
+          m.once('load', () => { clearTimeout(t); res(true); });
+          m.once('error', () => { clearTimeout(t); res(false); });
+        });
+        if (!ok) { map.removeLayer(gl); continue; }
+        if (tileLayer) { map.removeLayer(tileLayer); tileLayer = null; }
+        document.body.classList.add(dark ? 'vector' : 'vector-invert');
+        return true;
+      } catch (e) { console.warn('vector', e); }
+    }
+    return false;
+  }
   useTiles(0);
+  tryVector();
 
   const markers = {};
   function mkIcon(s, cls) {
@@ -361,6 +408,7 @@
     } else if (P.ph === 'show' && st.visited.theatre) {
       cls = 'info'; txt = '🤫 Wyciszcie telefony. Morticia patrzy.';
     } else if (P.ph === 'home') { cls = 'info'; txt = '🚗 Dobranoc! Sprawdźcie, czy nikt nie idzie za wami…'; }
+    if (isFar()) { cls = 'info'; txt = `📍 Jesteście ${fmtDist(dist(me, stopById.wash))} od trasy — czasy liczę od parkingu`; pill.onclick = null; }
     pill.className = 'status-pill ' + (txt ? 'show ' + cls : '');
     pill.textContent = txt;
 
@@ -376,7 +424,7 @@
       name.textContent = `${t.emoji} ${t.name}`;
       sub.textContent = (t.placeholder ? '⚠️ ' : '') + (t.sub || t.addr || '');
       dEl.textContent = fmtDist(d);
-      eEl.textContent = `~${Math.max(1, Math.round(walkMin(d)))} min pieszo` + (me ? '' : ' (szac.)');
+      eEl.textContent = `~${Math.max(1, Math.round(walkMin(d)))} min ` + (me && !isFar() ? 'pieszo' : 'od parkingu');
       storyBtn.style.display = isStop ? '' : 'none';
       storyBtn.onclick = () => openStory(t.id);
       navBtn.style.display = '';
